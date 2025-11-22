@@ -72,22 +72,20 @@ pipeline {
 			}
 			steps {
 				withCredentials([
+					sshUserPrivateKey(credentialsId: 'web1-ssh-key-note-thing', keyFileVariable: 'SSH_KEY'),
 					string(credentialsId: 'prod-xata-database-url-note-thing', variable: 'DATABASE_URL'),
 					string(credentialsId: 'prod-google-client-id-note-thing', variable: 'GOOGLE_CLIENT_ID'),
 					string(credentialsId: 'prod-google-client-secret-note-thing', variable: 'GOOGLE_CLIENT_SECRET'),
 					string(credentialsId: 'prod-jwt-secret-note-thing', variable: 'JWT_SECRET'),
 				]) {
 					sh '''
-						echo "Backend deploy enabled. Running BACKEND_DEPLOY_COMMAND..."
-						if [ -z "$BACKEND_DEPLOY_COMMAND" ]; then
-							echo "BACKEND_DEPLOY_COMMAND is not set"
-							exit 1
-						fi
 						export DATABASE_URL="$DATABASE_URL"
 						export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
 						export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
 						export JWT_SECRET="$JWT_SECRET"
-						eval "$BACKEND_DEPLOY_COMMAND"
+						cd backend
+						chmod +x deploy/deploy_backend.sh
+						./deploy/deploy_backend.sh "$SSH_KEY"
 					'''
 				}
 			}

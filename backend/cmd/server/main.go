@@ -11,15 +11,16 @@ import (
 	"syscall"
 	"time"
 
+	"note-thing/backend/internal/config"
 	"note-thing/backend/internal/db"
-
-	"github.com/joho/godotenv"
 )
 
 const defaultPort = "18611"
 
 func main() {
-	_ = godotenv.Load()
+	if err := config.Load(); err != nil {
+		log.Fatalf("load config: %v", err)
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {

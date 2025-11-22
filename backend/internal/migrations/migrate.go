@@ -6,8 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"note-thing/backend/internal/config"
+
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/joho/godotenv"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -25,7 +26,7 @@ type RunOptions struct {
 }
 
 func Run(options RunOptions) error {
-	_ = godotenv.Load()
+	_ = config.Load()
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
