@@ -25,9 +25,17 @@ pipeline {
 			}
 		}
 
-		stage('Backend: Test') {
+		stage('Backend: Test & Migrate') {
 			steps {
-				sh 'cd backend && go test ./...'
+				withCredentials([
+					string(credentialsId: 'prod-xata-database-url-note-thing', variable: 'DATABASE_URL'),
+				]) {
+					sh '''
+						cd backend
+						go test ./...
+						go run ./cmd/migrate -direction up
+					'''
+				}
 			}
 		}
 
