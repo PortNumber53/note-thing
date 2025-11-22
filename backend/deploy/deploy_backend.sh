@@ -11,7 +11,7 @@ fi
 
 REMOTE_USER="grimlock"
 REMOTE_HOST="web1"
-REMOTE_TARGET_DIR="/var/www/vhosts/apinote-thing.truvis.co"
+REMOTE_TARGET_DIR="/var/www/vhosts/api-note-thing.truvis.co"
 REMOTE_CONFIG_DIR="/etc/note-thing"
 
 BUILD_DIR="${ROOT_DIR}/dist"
