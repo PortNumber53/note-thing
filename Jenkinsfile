@@ -62,12 +62,9 @@ pipeline {
 
 		stage('Deploy Backend') {
 			when {
-				allOf {
-					anyOf {
-						branch 'master'
-						branch 'main'
-					}
-					expression { return env.BACKEND_DEPLOY_ENABLED == 'true' }
+				anyOf {
+					branch 'master'
+					branch 'main'
 				}
 			}
 			steps {
