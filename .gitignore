@@ -1,0 +1,20 @@
+.env
+.env.*
+
+# Go
+backend/tmp/
+backend/**/*.log
+
+# Node / Vite / Wrangler
+frontend/node_modules/
+frontend/dist/
+frontend/.wrangler/
+frontend/.vite/
+
+# OS / editor
+.DS_Store
+*.swp
+*.swo
+*.tmp
+*.log
+
