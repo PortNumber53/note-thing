@@ -21,6 +21,10 @@ echo "Building linux binary..."
 cd "${ROOT_DIR}"
 GOOS=linux GOARCH=amd64 go build -o "${BUILD_DIR}/note-thing" ./cmd/server
 
+echo "Ensuring target directories exist on server..."
+ssh -i "${SSH_KEY_PATH}" "${REMOTE_USER}@${REMOTE_HOST}" \
+	"sudo mkdir -p ${REMOTE_CONFIG_DIR} && mkdir -p ${REMOTE_TARGET_DIR}"
+
 echo "Uploading binary..."
 rsync -avz -e "ssh -i ${SSH_KEY_PATH}" \
 	"${BUILD_DIR}/note-thing" \
