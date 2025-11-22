@@ -2,6 +2,16 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Local configuration
+
+Wrangler dev vars are read from `frontend/.dev.vars`. Copy the example and set your local backend URL:
+
+```bash
+cp .dev.vars.example .dev.vars
+```
+
+`BACKEND_URL` is required by the worker for `/api/*` proxying in all environments.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh

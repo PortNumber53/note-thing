@@ -41,6 +41,7 @@ pipeline {
 			steps {
 				withCredentials([
 					string(credentialsId: 'cloudflare-api-token', variable: 'CLOUDFLARE_API_TOKEN'),
+					string(credentialsId: 'prod-backend-url-note-thing', variable: 'BACKEND_URL'),
 					string(credentialsId: 'prod-xata-database-url-note-thing', variable: 'DATABASE_URL'),
 					string(credentialsId: 'prod-google-client-id-note-thing', variable: 'GOOGLE_CLIENT_ID'),
 					string(credentialsId: 'prod-google-client-secret-note-thing', variable: 'GOOGLE_CLIENT_SECRET'),
@@ -50,11 +51,13 @@ pipeline {
 						cd frontend
 						export CF_API_TOKEN="$CLOUDFLARE_API_TOKEN"
 						export CLOUDFLARE_API_TOKEN="$CLOUDFLARE_API_TOKEN"
+						export BACKEND_URL="$BACKEND_URL"
 						export DATABASE_URL="$DATABASE_URL"
 						export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
 						export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
 						export JWT_SECRET="$JWT_SECRET"
-						npm run deploy
+						npm run build
+						wrangler deploy --var BACKEND_URL="$BACKEND_URL"
 					'''
 				}
 			}
