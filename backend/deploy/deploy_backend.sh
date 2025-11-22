@@ -33,7 +33,10 @@ rsync -avz -e "ssh -i ${SSH_KEY_PATH}" \
 echo "Uploading config sample..."
 rsync -avz -e "ssh -i ${SSH_KEY_PATH}" \
 	"${ROOT_DIR}/config.ini.sample" \
-	"${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_CONFIG_DIR}/config.ini.sample"
+	"${REMOTE_USER}@${REMOTE_HOST}:/tmp/config.ini.sample"
+
+ssh -i "${SSH_KEY_PATH}" "${REMOTE_USER}@${REMOTE_HOST}" \
+	"sudo mv /tmp/config.ini.sample ${REMOTE_CONFIG_DIR}/config.ini.sample && sudo chown root:root ${REMOTE_CONFIG_DIR}/config.ini.sample"
 
 echo "Ensuring config.ini exists on server..."
 ssh -i "${SSH_KEY_PATH}" "${REMOTE_USER}@${REMOTE_HOST}" \
