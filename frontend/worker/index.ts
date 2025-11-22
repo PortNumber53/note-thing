@@ -36,7 +36,7 @@ export default {
               backendResponse.headers.get("content-type") ?? "application/json",
           },
         });
-      } catch (err) {
+      } catch {
         return new Response(
           JSON.stringify({
             error: "backend_unreachable",
