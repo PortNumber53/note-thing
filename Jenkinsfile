@@ -69,7 +69,7 @@ pipeline {
 			}
 			steps {
 				withCredentials([
-					sshUserPrivateKey(credentialsId: 'web1-ssh-key-note-thing', keyFileVariable: 'SSH_KEY'),
+					sshUserPrivateKey(credentialsId: 'Jenkins-private-key', keyFileVariable: 'SSH_KEY'),
 					string(credentialsId: 'prod-xata-database-url-note-thing', variable: 'DATABASE_URL'),
 					string(credentialsId: 'prod-google-client-id-note-thing', variable: 'GOOGLE_CLIENT_ID'),
 					string(credentialsId: 'prod-google-client-secret-note-thing', variable: 'GOOGLE_CLIENT_SECRET'),

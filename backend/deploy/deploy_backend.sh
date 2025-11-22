@@ -22,28 +22,28 @@ cd "${ROOT_DIR}"
 GOOS=linux GOARCH=amd64 go build -o "${BUILD_DIR}/note-thing" ./cmd/server
 
 echo "Uploading binary..."
-rsync -avz -e "ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no" \
+rsync -avz -e "ssh -i ${SSH_KEY_PATH}" \
 	"${BUILD_DIR}/note-thing" \
 	"${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_TARGET_DIR}/note-thing"
 
 echo "Uploading config sample..."
-rsync -avz -e "ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no" \
+rsync -avz -e "ssh -i ${SSH_KEY_PATH}" \
 	"${ROOT_DIR}/config.ini.sample" \
 	"${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_CONFIG_DIR}/config.ini.sample"
 
 echo "Ensuring config.ini exists on server..."
-ssh -i "${SSH_KEY_PATH}" -o StrictHostKeyChecking=no "${REMOTE_USER}@${REMOTE_HOST}" \
+ssh -i "${SSH_KEY_PATH}" "${REMOTE_USER}@${REMOTE_HOST}" \
 	"sudo mkdir -p ${REMOTE_CONFIG_DIR} && \
 	 if [ ! -f ${REMOTE_CONFIG_DIR}/config.ini ]; then \
 	  sudo cp ${REMOTE_CONFIG_DIR}/config.ini.sample ${REMOTE_CONFIG_DIR}/config.ini; \
 	 fi"
 
 echo "Installing systemd unit..."
-scp -i "${SSH_KEY_PATH}" -o StrictHostKeyChecking=no \
+scp -i "${SSH_KEY_PATH}" \
 	"${ROOT_DIR}/deploy/note-thing.service" \
 	"${REMOTE_USER}@${REMOTE_HOST}:/tmp/note-thing.service"
 
-ssh -i "${SSH_KEY_PATH}" -o StrictHostKeyChecking=no "${REMOTE_USER}@${REMOTE_HOST}" \
+ssh -i "${SSH_KEY_PATH}" "${REMOTE_USER}@${REMOTE_HOST}" \
 	"sudo mv /tmp/note-thing.service /etc/systemd/system/note-thing.service && \
 	 sudo systemctl daemon-reload && \
 	 sudo systemctl enable note-thing.service && \
