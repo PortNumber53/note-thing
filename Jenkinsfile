@@ -57,7 +57,7 @@ pipeline {
 						export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
 						export JWT_SECRET="$JWT_SECRET"
 						npm run build
-						npx wrangler deploy --var BACKEND_URL="$BACKEND_URL"
+						npx wrangler deploy --config wrangler.jsonc --var BACKEND_URL="$BACKEND_URL"
 					'''
 				}
 			}
