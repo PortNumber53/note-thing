@@ -9,6 +9,9 @@ export default {
           : undefined;
 
       if (!configuredBackendUrl) {
+        console.error("BACKEND_URL not configured for worker", {
+          requestHost: url.hostname,
+        });
         return new Response(
           JSON.stringify({
             error: "backend_url_not_configured",
@@ -36,7 +39,11 @@ export default {
               backendResponse.headers.get("content-type") ?? "application/json",
           },
         });
-      } catch {
+      } catch (error) {
+        console.error("Backend fetch failed", {
+          configuredBackendUrl,
+          error: error instanceof Error ? error.message : String(error),
+        });
         return new Response(
           JSON.stringify({
             error: "backend_unreachable",

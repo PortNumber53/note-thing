@@ -36,7 +36,7 @@ func main() {
 	server := &http.Server{
 		Addr:              ":" + port,
 		ReadHeaderTimeout: 5 * time.Second,
-		Handler:           routes(database),
+		Handler:           withRequestLogging(routes(database)),
 	}
 
 	shutdownErrors := make(chan error, 1)
@@ -94,6 +94,7 @@ func routes(database *sql.DB) http.Handler {
 			`SELECT id, title, body, created_at FROM notes ORDER BY created_at DESC`,
 		)
 		if err != nil {
+			log.Printf("query notes failed: %v", err)
 			http.Error(writer, "failed to query notes", http.StatusInternalServerError)
 			return
 		}
@@ -103,6 +104,7 @@ func routes(database *sql.DB) http.Handler {
 		for rows.Next() {
 			var row note
 			if err := rows.Scan(&row.Id, &row.Title, &row.Body, &row.CreatedAt); err != nil {
+				log.Printf("scan notes row failed: %v", err)
 				http.Error(writer, "failed to read notes", http.StatusInternalServerError)
 				return
 			}
@@ -110,6 +112,7 @@ func routes(database *sql.DB) http.Handler {
 		}
 
 		if err := rows.Err(); err != nil {
+			log.Printf("iterate notes rows failed: %v", err)
 			http.Error(writer, "failed while reading notes", http.StatusInternalServerError)
 			return
 		}
@@ -119,4 +122,35 @@ func routes(database *sql.DB) http.Handler {
 	})
 
 	return mux
+}
+
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (writer *loggingResponseWriter) WriteHeader(statusCode int) {
+	writer.statusCode = statusCode
+	writer.ResponseWriter.WriteHeader(statusCode)
+}
+
+func withRequestLogging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		startTime := time.Now()
+		responseWriter := &loggingResponseWriter{
+			ResponseWriter: writer,
+			statusCode:     http.StatusOK,
+		}
+
+		next.ServeHTTP(responseWriter, request)
+
+		duration := time.Since(startTime)
+		log.Printf(
+			"%s %s -> %d (%s)",
+			request.Method,
+			request.URL.Path,
+			responseWriter.statusCode,
+			duration,
+		)
+	})
 }
