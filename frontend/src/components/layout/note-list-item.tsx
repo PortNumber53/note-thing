@@ -8,7 +8,7 @@ type Props = {
 }
 
 export function NoteListItem({ note, isActive, onClick }: Props) {
-  const preview = note.body.slice(0, 120).replace(/[#*_`~\[\]]/g, '')
+  const preview = note.body.slice(0, 120).replace(/[#*_`~[\]]/g, '')
   const date = new Date(note.updatedAt).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
