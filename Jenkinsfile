@@ -87,13 +87,23 @@ EOF
 					string(credentialsId: 'prod-database-url-note-thing', variable: 'DATABASE_URL'),
 					string(credentialsId: 'prod-google-client-id-note-thing', variable: 'GOOGLE_CLIENT_ID'),
 					string(credentialsId: 'prod-google-client-secret-note-thing', variable: 'GOOGLE_CLIENT_SECRET'),
+					string(credentialsId: 'prod-google-redirect-url-note-thing', variable: 'GOOGLE_REDIRECT_URL'),
 					string(credentialsId: 'prod-jwt-secret-note-thing', variable: 'JWT_SECRET'),
+					string(credentialsId: 'prod-frontend-url-note-thing', variable: 'FRONTEND_URL'),
+					string(credentialsId: 'prod-stripe-secret-key-note-thing', variable: 'STRIPE_SECRET_KEY'),
+					string(credentialsId: 'prod-stripe-webhook-secret-note-thing', variable: 'STRIPE_WEBHOOK_SECRET'),
+					string(credentialsId: 'prod-admin-emails-note-thing', variable: 'ADMIN_EMAILS'),
 				]) {
 					sh '''
 						export DATABASE_URL="$DATABASE_URL"
 						export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
 						export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
+						export GOOGLE_REDIRECT_URL="$GOOGLE_REDIRECT_URL"
 						export JWT_SECRET="$JWT_SECRET"
+						export FRONTEND_URL="$FRONTEND_URL"
+						export STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
+						export STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET"
+						export ADMIN_EMAILS="$ADMIN_EMAILS"
 						cd backend
 						chmod +x deploy/deploy_backend.sh
 						./deploy/deploy_backend.sh "$SSH_KEY"

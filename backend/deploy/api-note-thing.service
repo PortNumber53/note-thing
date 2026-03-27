@@ -5,6 +5,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/var/www/vhosts/api-note-thing.truvis.co
+Environment=CONFIG_PATH=/etc/api-note-thing/config.ini
 ExecStart=/var/www/vhosts/api-note-thing.truvis.co/note-thing serve
 Restart=always
 RestartSec=3
