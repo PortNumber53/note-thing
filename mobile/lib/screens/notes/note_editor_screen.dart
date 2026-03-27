@@ -16,6 +16,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   late TextEditingController _titleController;
   late TextEditingController _bodyController;
   bool _isNew = true;
+  bool _loaded = false;
 
   @override
   void initState() {
@@ -23,18 +24,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     _titleController = TextEditingController();
     _bodyController = TextEditingController();
     _isNew = widget.noteId == null;
-
-    if (!_isNew) {
-      _loadNote();
-    }
-  }
-
-  Future<void> _loadNote() async {
-    try {
-      final note = await ref.read(notesApiProvider).fetchById(widget.noteId!);
-      _titleController.text = note.title;
-      _bodyController.text = note.body;
-    } catch (_) {}
   }
 
   @override
@@ -74,6 +63,19 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // For editing, load from the already-decrypted notes provider
+    if (!_isNew && !_loaded) {
+      final notesAsync = ref.watch(notesProvider((notebookId: null, tagId: null)));
+      notesAsync.whenData((notes) {
+        final note = notes.where((n) => n.id == widget.noteId).firstOrNull;
+        if (note != null && !_loaded) {
+          _titleController.text = note.title;
+          _bodyController.text = note.body;
+          _loaded = true;
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_isNew ? 'New Note' : 'Edit Note'),

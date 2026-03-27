@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../models/note.dart';
 
@@ -17,6 +18,14 @@ class NoteCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: () {
+        if (note.body.isNotEmpty) {
+          Clipboard.setData(ClipboardData(text: note.body));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Note copied to clipboard'), duration: Duration(seconds: 2)),
+          );
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
@@ -27,7 +36,7 @@ class NoteCard extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      if (note.isEncrypted)
+                      if (note.isEncrypted && note.title.isEmpty)
                         Padding(
                           padding: const EdgeInsets.only(right: 4),
                           child: Icon(Icons.lock, size: 14, color: Theme.of(context).colorScheme.primary),

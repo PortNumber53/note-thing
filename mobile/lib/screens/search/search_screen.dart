@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/note.dart';
 import '../../providers/providers.dart';
 import '../../widgets/note_card.dart';
 
@@ -13,6 +14,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _controller = TextEditingController();
+  String _query = '';
 
   @override
   void dispose() {
@@ -22,7 +24,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final resultsAsync = ref.watch(searchResultsProvider);
+    // Load all decrypted notes for client-side search
+    final notesAsync = ref.watch(notesProvider((notebookId: null, tagId: null)));
 
     return Scaffold(
       appBar: AppBar(
@@ -33,25 +36,44 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             border: InputBorder.none,
           ),
           onChanged: (value) {
-            ref.read(searchQueryProvider.notifier).state = value;
+            setState(() => _query = value.trim().toLowerCase());
           },
           autofocus: true,
         ),
       ),
-      body: resultsAsync.when(
+      body: notesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (notes) {
-          if (notes.isEmpty) {
+        data: (allNotes) {
+          final notes = _query.isEmpty
+              ? <Note>[]
+              : allNotes.where((n) {
+                  return n.title.toLowerCase().contains(_query) ||
+                      n.body.toLowerCase().contains(_query);
+                }).toList();
+
+          if (_query.isEmpty) {
             return Center(
               child: Text(
-                _controller.text.isEmpty ? 'Type to search' : 'No results',
+                'Type to search',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
             );
           }
+
+          if (notes.isEmpty) {
+            return Center(
+              child: Text(
+                'No results',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            );
+          }
+
           return ListView.builder(
             itemCount: notes.length,
             itemBuilder: (context, index) {

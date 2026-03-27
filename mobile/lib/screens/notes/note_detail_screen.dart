@@ -48,20 +48,21 @@ class NoteDetailScreen extends ConsumerWidget {
               ),
             ],
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (note.tags.isNotEmpty)
-                  Wrap(
-                    spacing: 4,
-                    children: note.tags.map((tag) => Chip(
-                      label: Text(tag.name),
-                      visualDensity: VisualDensity.compact,
-                    )).toList(),
-                  ),
-                if (note.tags.isNotEmpty) const SizedBox(height: 12),
+          body: SelectionArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (note.tags.isNotEmpty)
+                    Wrap(
+                      spacing: 4,
+                      children: note.tags.map((tag) => Chip(
+                        label: Text(tag.name),
+                        visualDensity: VisualDensity.compact,
+                      )).toList(),
+                    ),
+                  if (note.tags.isNotEmpty) const SizedBox(height: 12),
                 Expanded(
                   child: note.isEncrypted && note.body.isEmpty
                       ? Center(
@@ -89,6 +90,7 @@ class NoteDetailScreen extends ConsumerWidget {
                       : Markdown(data: note.body),
                 ),
               ],
+              ),
             ),
           ),
         );
