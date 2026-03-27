@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strconv"
 	"time"
 
@@ -158,7 +159,14 @@ func CreateNote(ctx context.Context, db *sql.DB, userID string, input CreateNote
 		err := tx.QueryRowContext(ctx, `
 			SELECT id FROM notebooks WHERE user_id = $1 AND is_default = true
 		`, userID).Scan(&defaultID)
-		if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// Auto-create default notebook if missing
+			nb, createErr := CreateDefaultNotebook(ctx, tx, userID)
+			if createErr != nil {
+				return Note{}, createErr
+			}
+			defaultID = nb.ID
+		} else if err != nil {
 			return Note{}, err
 		}
 		notebookID = &defaultID

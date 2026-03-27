@@ -11,7 +11,7 @@ class NoteDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notesAsync = ref.watch(notesProvider(const {}));
+    final notesAsync = ref.watch(notesProvider((notebookId: null, tagId: null)));
 
     return notesAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -27,17 +27,22 @@ class NoteDetailScreen extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(note.title.isEmpty ? 'Untitled' : note.title),
+            title: Text(note.isEncrypted && note.title.isEmpty
+                ? 'Encrypted note'
+                : note.title.isEmpty
+                    ? 'Untitled'
+                    : note.title),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () => context.go('/notes/${note.id}/edit'),
-              ),
+              if (!note.isEncrypted || note.title.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => context.go('/notes/${note.id}/edit'),
+                ),
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () async {
                   await ref.read(notesApiProvider).delete(note.id);
-                  ref.invalidate(notesProvider);
+                  ref.invalidate(notesProvider((notebookId: null, tagId: null)));
                   if (context.mounted) context.go('/notes');
                 },
               ),
@@ -58,7 +63,30 @@ class NoteDetailScreen extends ConsumerWidget {
                   ),
                 if (note.tags.isNotEmpty) const SizedBox(height: 12),
                 Expanded(
-                  child: Markdown(data: note.body),
+                  child: note.isEncrypted && note.body.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_outline, size: 48, color: Theme.of(context).colorScheme.outline),
+                              const SizedBox(height: 12),
+                              Text(
+                                'This note is encrypted',
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Unlock from the web app to view',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.outline,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Markdown(data: note.body),
                 ),
               ],
             ),

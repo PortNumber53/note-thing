@@ -28,6 +28,14 @@ export default defineConfig({
         target: 'http://localhost:18611',
         changeOrigin: true,
       },
+      '/auth/signup': {
+        target: 'http://localhost:18611',
+        changeOrigin: true,
+      },
+      '/auth/login': {
+        target: 'http://localhost:18611',
+        changeOrigin: true,
+      },
       '/callback': {
         target: 'http://localhost:18611',
         changeOrigin: true,

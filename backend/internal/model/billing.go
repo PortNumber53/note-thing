@@ -244,14 +244,10 @@ func GetUserStripeCustomerID(ctx context.Context, db *sql.DB, userID string) (st
 }
 
 func GetUserByStripeCustomerID(ctx context.Context, db *sql.DB, customerID string) (User, error) {
-	var u User
-	err := db.QueryRowContext(ctx, `
+	return scanUser(db.QueryRowContext(ctx, `
 		SELECT id, google_id, email, name, avatar_url, created_at, updated_at
 		FROM users WHERE stripe_customer_id = $1
-	`, customerID).Scan(
-		&u.ID, &u.GoogleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt,
-	)
-	return u, err
+	`, customerID))
 }
 
 // Price migrations

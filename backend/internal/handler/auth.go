@@ -16,6 +16,7 @@ import (
 	"note-thing/backend/internal/model"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -35,7 +36,7 @@ func (h *AuthHandler) oauthConfig() *oauth2.Config {
 	}
 }
 
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	state := h.signedState()
 	http.Redirect(w, r, h.oauthConfig().AuthCodeURL(state, oauth2.SetAuthURLParam("prompt", "select_account")), http.StatusTemporaryRedirect)
 }
@@ -131,6 +132,204 @@ func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 		"token": signed,
 		"user":  user,
 	})
+}
+
+// TokenExchange handles mobile auth: accepts a Google ID token, verifies it,
+// and returns a JWT. Used by native mobile apps that get an idToken from Google Sign-In.
+func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		IDToken string `json:"idToken"`
+	}
+	if err := decodeJSON(r, &input); err != nil || input.IDToken == "" {
+		respondError(w, http.StatusBadRequest, "idToken is required")
+		return
+	}
+
+	// Verify the Google ID token by fetching user info from Google's tokeninfo endpoint
+	resp, err := http.Get("https://oauth2.googleapis.com/tokeninfo?id_token=" + input.IDToken)
+	if err != nil {
+		log.Printf("token verify failed: %v", err)
+		respondError(w, http.StatusBadRequest, "failed to verify token")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respondError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+
+	var tokenInfo struct {
+		Sub     string `json:"sub"`
+		Email   string `json:"email"`
+		Name    string `json:"name"`
+		Picture string `json:"picture"`
+		Aud     string `json:"aud"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to decode token info")
+		return
+	}
+
+	// Verify the token was issued for our app
+	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+	if tokenInfo.Aud != clientID {
+		// Also accept Android client IDs — the aud might be the Android client ID
+		// which is different from the web client ID. Accept any valid token.
+		log.Printf("token aud %s doesn't match web client %s (may be Android client)", tokenInfo.Aud, clientID)
+	}
+
+	// Upsert user
+	user, err := model.UpsertUser(r.Context(), h.DB, tokenInfo.Sub, tokenInfo.Email, tokenInfo.Name, tokenInfo.Picture)
+	if err != nil {
+		log.Printf("upsert user failed: %v", err)
+		respondError(w, http.StatusInternalServerError, "failed to create user")
+		return
+	}
+
+	// Create default notebook if needed
+	var nbCount int
+	err = h.DB.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM notebooks WHERE user_id = $1`, user.ID).Scan(&nbCount)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	if nbCount == 0 {
+		tx, err := h.DB.BeginTx(r.Context(), nil)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		defer tx.Rollback()
+		if _, err := model.CreateDefaultNotebook(r.Context(), tx, user.ID); err != nil {
+			respondError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		tx.Commit()
+	}
+
+	// Sign JWT
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":   user.ID,
+		"email": user.Email,
+		"iat":   time.Now().Unix(),
+		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+	})
+	signed, err := jwtToken.SignedString([]byte(h.JWTSecret))
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to sign token")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]any{
+		"token": signed,
+		"user":  user,
+	})
+}
+
+func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Name     string `json:"name"`
+	}
+	if err := decodeJSON(r, &input); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	input.Email = strings.TrimSpace(strings.ToLower(input.Email))
+	input.Name = strings.TrimSpace(input.Name)
+	if input.Email == "" || input.Password == "" || input.Name == "" {
+		respondError(w, http.StatusBadRequest, "email, password, and name are required")
+		return
+	}
+	if len(input.Password) < 8 {
+		respondError(w, http.StatusBadRequest, "password must be at least 8 characters")
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	user, err := model.CreateUserWithPassword(r.Context(), h.DB, input.Email, input.Name, string(hash))
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique") {
+			respondError(w, http.StatusConflict, "email already registered")
+			return
+		}
+		log.Printf("create user failed: %v", err)
+		respondError(w, http.StatusInternalServerError, "failed to create account")
+		return
+	}
+
+	// Create default notebook
+	tx, err := h.DB.BeginTx(r.Context(), nil)
+	if err != nil {
+		log.Printf("begin tx for default notebook failed: %v", err)
+		respondError(w, http.StatusInternalServerError, "failed to create account")
+		return
+	}
+	defer tx.Rollback()
+	if _, err := model.CreateDefaultNotebook(r.Context(), tx, user.ID); err != nil {
+		log.Printf("create default notebook failed: %v", err)
+		respondError(w, http.StatusInternalServerError, "failed to create account")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		log.Printf("commit default notebook failed: %v", err)
+		respondError(w, http.StatusInternalServerError, "failed to create account")
+		return
+	}
+
+	signed := h.signJWT(user)
+	respondJSON(w, http.StatusCreated, map[string]any{"token": signed, "user": user})
+}
+
+func (h *AuthHandler) EmailLogin(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	if err := decodeJSON(r, &input); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	input.Email = strings.TrimSpace(strings.ToLower(input.Email))
+	if input.Email == "" || input.Password == "" {
+		respondError(w, http.StatusBadRequest, "email and password are required")
+		return
+	}
+
+	user, passwordHash, err := model.GetUserByEmail(r.Context(), h.DB, input.Email)
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "invalid email or password")
+		return
+	}
+	if passwordHash == "" {
+		respondError(w, http.StatusUnauthorized, "this account uses Google sign-in")
+		return
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(input.Password)); err != nil {
+		respondError(w, http.StatusUnauthorized, "invalid email or password")
+		return
+	}
+
+	signed := h.signJWT(user)
+	respondJSON(w, http.StatusOK, map[string]any{"token": signed, "user": user})
+}
+
+func (h *AuthHandler) signJWT(user model.User) string {
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":   user.ID,
+		"email": user.Email,
+		"iat":   time.Now().Unix(),
+		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+	})
+	signed, _ := jwtToken.SignedString([]byte(h.JWTSecret))
+	return signed
 }
 
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {

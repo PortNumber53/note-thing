@@ -121,11 +121,17 @@ export function Sidebar({ className }: { className?: string }) {
           <button className="flex w-full items-center gap-2 p-3 hover:bg-sidebar-accent transition-colors text-left">
             {user && (
               <>
-                <img
-                  src={user.avatarUrl}
-                  alt={user.name}
-                  className="h-7 w-7 rounded-full"
-                />
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="h-7 w-7 rounded-full"
+                  />
+                ) : (
+                  <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
+                    {user.name?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                )}
                 <span className="flex-1 truncate text-sm">{user.name}</span>
               </>
             )}

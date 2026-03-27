@@ -25,11 +25,28 @@ class NoteCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    note.title.isEmpty ? 'Untitled' : note.title,
-                    style: Theme.of(context).textTheme.titleSmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    children: [
+                      if (note.isEncrypted)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Icon(Icons.lock, size: 14, color: Theme.of(context).colorScheme.primary),
+                        ),
+                      Expanded(
+                        child: Text(
+                          note.isEncrypted && note.title.isEmpty
+                              ? 'Encrypted note'
+                              : note.title.isEmpty
+                                  ? 'Untitled'
+                                  : note.title,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontStyle: note.isEncrypted && note.title.isEmpty ? FontStyle.italic : null,
+                              ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Text(

@@ -16,9 +16,16 @@ type User struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func UpsertUser(ctx context.Context, db *sql.DB, googleID, email, name, avatarURL string) (User, error) {
+func scanUser(row interface{ Scan(...any) error }) (User, error) {
 	var u User
-	err := db.QueryRowContext(ctx, `
+	var googleID sql.NullString
+	err := row.Scan(&u.ID, &googleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
+	u.GoogleID = googleID.String
+	return u, err
+}
+
+func UpsertUser(ctx context.Context, db *sql.DB, googleID, email, name, avatarURL string) (User, error) {
+	return scanUser(db.QueryRowContext(ctx, `
 		INSERT INTO users (google_id, email, name, avatar_url)
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (google_id) DO UPDATE SET
@@ -27,33 +34,44 @@ func UpsertUser(ctx context.Context, db *sql.DB, googleID, email, name, avatarUR
 			avatar_url = EXCLUDED.avatar_url,
 			updated_at = now()
 		RETURNING id, google_id, email, name, avatar_url, created_at, updated_at
-	`, googleID, email, name, avatarURL).Scan(
-		&u.ID, &u.GoogleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt,
-	)
-	return u, err
+	`, googleID, email, name, avatarURL))
 }
 
 func GetUserByID(ctx context.Context, db *sql.DB, id string) (User, error) {
-	var u User
-	err := db.QueryRowContext(ctx, `
+	return scanUser(db.QueryRowContext(ctx, `
 		SELECT id, google_id, email, name, avatar_url, created_at, updated_at
 		FROM users WHERE id = $1
-	`, id).Scan(
-		&u.ID, &u.GoogleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt,
-	)
-	return u, err
+	`, id))
 }
 
 func UpdateUserName(ctx context.Context, db *sql.DB, id, name string) (User, error) {
-	var u User
-	err := db.QueryRowContext(ctx, `
+	return scanUser(db.QueryRowContext(ctx, `
 		UPDATE users SET name = $1, updated_at = now()
 		WHERE id = $2
 		RETURNING id, google_id, email, name, avatar_url, created_at, updated_at
-	`, name, id).Scan(
-		&u.ID, &u.GoogleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt,
+	`, name, id))
+}
+
+func CreateUserWithPassword(ctx context.Context, db *sql.DB, email, name, passwordHash string) (User, error) {
+	return scanUser(db.QueryRowContext(ctx, `
+		INSERT INTO users (email, name, password_hash, avatar_url)
+		VALUES ($1, $2, $3, '')
+		RETURNING id, google_id, email, name, avatar_url, created_at, updated_at
+	`, email, name, passwordHash))
+}
+
+func GetUserByEmail(ctx context.Context, db *sql.DB, email string) (User, string, error) {
+	var u User
+	var googleID sql.NullString
+	var passwordHash sql.NullString
+	err := db.QueryRowContext(ctx, `
+		SELECT id, google_id, email, name, avatar_url, created_at, updated_at, password_hash
+		FROM users WHERE email = $1
+	`, email).Scan(
+		&u.ID, &googleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &passwordHash,
 	)
-	return u, err
+	u.GoogleID = googleID.String
+	return u, passwordHash.String, err
 }
 
 func DeleteUser(ctx context.Context, db *sql.DB, id string) error {

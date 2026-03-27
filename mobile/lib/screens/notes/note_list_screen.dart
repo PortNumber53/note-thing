@@ -12,10 +12,10 @@ class NoteListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notesAsync = ref.watch(notesProvider({
-      'notebook_id': notebookId,
-      'tag_id': tagId,
-    }));
+    final notesAsync = ref.watch(notesProvider((
+      notebookId: notebookId,
+      tagId: tagId,
+    )));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Notes')),
@@ -27,10 +27,10 @@ class NoteListScreen extends ConsumerWidget {
             return const Center(child: Text('No notes yet'));
           }
           return RefreshIndicator(
-            onRefresh: () => ref.refresh(notesProvider({
-              'notebook_id': notebookId,
-              'tag_id': tagId,
-            }).future),
+            onRefresh: () => ref.refresh(notesProvider((
+              notebookId: notebookId,
+              tagId: tagId,
+            )).future),
             child: ListView.builder(
               itemCount: notes.length,
               itemBuilder: (context, index) {

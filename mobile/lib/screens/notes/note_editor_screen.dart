@@ -52,7 +52,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
           title: _titleController.text,
           body: _bodyController.text,
         );
-        ref.invalidate(notesProvider);
+        ref.invalidate(notesProvider((notebookId: null, tagId: null)));
         if (mounted) context.go('/notes/${note.id}');
       } else {
         await api.update(
@@ -60,7 +60,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
           title: _titleController.text,
           body: _bodyController.text,
         );
-        ref.invalidate(notesProvider);
+        ref.invalidate(notesProvider((notebookId: null, tagId: null)));
         if (mounted) context.go('/notes/${widget.noteId}');
       }
     } catch (e) {

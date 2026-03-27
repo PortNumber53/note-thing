@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"net/http"
 
 	"note-thing/backend/internal/model"
@@ -62,6 +63,7 @@ func (h *NotesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	note, err := model.CreateNote(r.Context(), h.DB, userID, input)
 	if err != nil {
+		log.Printf("create note failed: %v", err)
 		respondError(w, http.StatusInternalServerError, "failed to create note")
 		return
 	}

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
@@ -13,6 +14,11 @@ class ApiClient {
           receiveTimeout: ApiConfig.receiveTimeout,
           headers: {'Accept': 'application/json'},
         )) {
+    dio.interceptors.add(LogInterceptor(
+      requestBody: true,
+      responseBody: true,
+      logPrint: (obj) => developer.log(obj.toString(), name: 'API'),
+    ));
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await storage.read(key: 'jwt_token');

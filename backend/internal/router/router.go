@@ -29,9 +29,12 @@ func New(db *sql.DB, jwtSecret string, billingSvc *billing.Service) http.Handler
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
-	r.Get("/auth/google/login", auth.Login)
+	r.Get("/auth/google/login", auth.GoogleLogin)
 	r.Get("/auth/google/callback", auth.Callback)
 	r.Get("/callback/google/oauth", auth.Callback)
+	r.Post("/auth/google/token", auth.TokenExchange)
+	r.Post("/auth/signup", auth.Signup)
+	r.Post("/auth/login", auth.EmailLogin)
 	r.Get("/api/billing/price", billingH.GetPrice)
 	r.Post("/stripe/webhook", billingH.HandleWebhook)
 

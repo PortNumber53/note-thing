@@ -1,7 +1,7 @@
 class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:18611',
+    defaultValue: 'https://api-note14.dev.portnumber53.com',
   );
 
   static const Duration connectTimeout = Duration(seconds: 10);
