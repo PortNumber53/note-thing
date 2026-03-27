@@ -43,3 +43,27 @@ func GetUserByID(ctx context.Context, db *sql.DB, id string) (User, error) {
 	)
 	return u, err
 }
+
+func UpdateUserName(ctx context.Context, db *sql.DB, id, name string) (User, error) {
+	var u User
+	err := db.QueryRowContext(ctx, `
+		UPDATE users SET name = $1, updated_at = now()
+		WHERE id = $2
+		RETURNING id, google_id, email, name, avatar_url, created_at, updated_at
+	`, name, id).Scan(
+		&u.ID, &u.GoogleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt,
+	)
+	return u, err
+}
+
+func DeleteUser(ctx context.Context, db *sql.DB, id string) error {
+	result, err := db.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}

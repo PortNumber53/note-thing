@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"note-thing/backend/internal/model"
@@ -140,6 +141,32 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusOK, user)
+}
+
+func (h *AuthHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
+	userID := userIDFromContext(r)
+	var input struct {
+		Name string `json:"name"`
+	}
+	if err := decodeJSON(r, &input); err != nil || strings.TrimSpace(input.Name) == "" {
+		respondError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	user, err := model.UpdateUserName(r.Context(), h.DB, userID, strings.TrimSpace(input.Name))
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to update user")
+		return
+	}
+	respondJSON(w, http.StatusOK, user)
+}
+
+func (h *AuthHandler) DeleteMe(w http.ResponseWriter, r *http.Request) {
+	userID := userIDFromContext(r)
+	if err := model.DeleteUser(r.Context(), h.DB, userID); err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to delete account")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // signedState creates an HMAC-signed random state token.

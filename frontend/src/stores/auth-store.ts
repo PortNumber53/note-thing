@@ -13,6 +13,8 @@ type AuthState = {
   init: () => void
   setToken: (token: string) => void
   fetchUser: () => Promise<void>
+  updateUser: (data: { name: string }) => Promise<void>
+  deleteAccount: () => Promise<void>
   logout: () => void
 }
 
@@ -56,6 +58,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     } catch {
       get().logout()
     }
+  },
+
+  updateUser: async (data: { name: string }) => {
+    const user = await api.put<User>('/api/me', data)
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user))
+    set({ user })
+  },
+
+  deleteAccount: async () => {
+    await api.delete('/api/me')
+    get().logout()
   },
 
   logout: () => {

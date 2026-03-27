@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"net/http"
 
+	"note-thing/backend/internal/billing"
 	"note-thing/backend/internal/handler"
 	"note-thing/backend/internal/middleware"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func New(db *sql.DB, jwtSecret string) http.Handler {
+func New(db *sql.DB, jwtSecret string, billingSvc *billing.Service) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestLogging)
 
@@ -19,6 +20,9 @@ func New(db *sql.DB, jwtSecret string) http.Handler {
 	notebooks := &handler.NotebooksHandler{DB: db}
 	tags := &handler.TagsHandler{DB: db}
 	search := &handler.SearchHandler{DB: db}
+	settings := &handler.SettingsHandler{DB: db}
+	billingH := &handler.BillingHandler{DB: db, Billing: billingSvc}
+	admin := &handler.AdminHandler{DB: db, Billing: billingSvc}
 
 	// Public routes
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -28,12 +32,40 @@ func New(db *sql.DB, jwtSecret string) http.Handler {
 	r.Get("/auth/google/login", auth.Login)
 	r.Get("/auth/google/callback", auth.Callback)
 	r.Get("/callback/google/oauth", auth.Callback)
+	r.Get("/api/billing/price", billingH.GetPrice)
+	r.Post("/stripe/webhook", billingH.HandleWebhook)
 
-	// Authenticated routes
+	// Authenticated routes (no subscription required)
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(jwtSecret))
 
 		r.Get("/api/me", auth.Me)
+		r.Put("/api/me", auth.UpdateMe)
+		r.Delete("/api/me", auth.DeleteMe)
+
+		r.Get("/api/settings", settings.Get)
+		r.Put("/api/settings", settings.Update)
+
+		r.Get("/api/billing/status", billingH.Status)
+		r.Post("/api/billing/checkout", billingH.CreateCheckout)
+		r.Post("/api/billing/portal", billingH.CreatePortal)
+		r.Post("/api/billing/cancel", billingH.CancelSubscription)
+		r.Post("/api/billing/reactivate", billingH.Reactivate)
+
+		// Admin routes
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireAdmin(db))
+			r.Post("/api/admin/billing/price", admin.ChangePrice)
+			r.Get("/api/admin/billing/migration", admin.MigrationStatus)
+		})
+	})
+
+	// Authenticated + subscription required (only enforced when billing is configured)
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequireAuth(jwtSecret))
+		if billingSvc != nil {
+			r.Use(middleware.RequireActiveSubscription(db))
+		}
 
 		r.Route("/api/notes", func(r chi.Router) {
 			r.Get("/", notes.List)

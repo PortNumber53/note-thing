@@ -3,6 +3,8 @@ export type User = {
   email: string
   name: string
   avatarUrl: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type Note = {
@@ -27,4 +29,26 @@ export type Notebook = {
 export type Tag = {
   id: string
   name: string
+}
+
+export type UserSettings = {
+  defaultNotebookId: string | null
+}
+
+export type EditorPreviewMode = 'split' | 'live' | 'source'
+
+export type BillingSubscription = {
+  id: string
+  status: string
+  stripePriceId: string
+  trialEnd: string | null
+  currentPeriodEnd: string | null
+  cancelAtPeriodEnd: boolean
+  amountCents: number
+  currency: string
+}
+
+export type BillingStatus = {
+  subscription: BillingSubscription | null
+  hasActiveAccess: boolean
 }

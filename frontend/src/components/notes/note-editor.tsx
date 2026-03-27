@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Save, Trash2 } from 'lucide-react'
 import { useNotesStore } from '@/stores/notes-store'
+import { useThemeStore } from '@/stores/theme-store'
 import { useDebounce } from '@/hooks/use-debounce'
 import { NoteTags } from './note-tags'
 import type { Note } from '@/types'
@@ -17,6 +18,7 @@ export function NoteEditor({ note }: Props) {
   const [body, setBody] = useState(note.body)
   const [saving, setSaving] = useState(false)
   const { updateNote, deleteNote } = useNotesStore()
+  const colorMode = useThemeStore((s) => s.resolved)
 
   useEffect(() => {
     setTitle(note.title)
@@ -73,7 +75,7 @@ export function NoteEditor({ note }: Props) {
         tags={note.tags}
         onTagsChanged={() => useNotesStore.getState().fetchNotes()}
       />
-      <div className="flex-1 overflow-auto" data-color-mode="light">
+      <div className="flex-1 overflow-auto" data-color-mode={colorMode}>
         <MDEditor
           value={body}
           onChange={(val) => setBody(val || '')}

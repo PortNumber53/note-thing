@@ -43,6 +43,10 @@ func Load() error {
 	setIfMissing("PORT", section.Key("PORT").String())
 	setIfMissing("GOOGLE_REDIRECT_URL", section.Key("GOOGLE_REDIRECT_URL").String())
 	setIfMissing("FRONTEND_URL", section.Key("FRONTEND_URL").String())
+	setIfMissing("STRIPE_SECRET_KEY", section.Key("STRIPE_SECRET_KEY").String())
+	setIfMissing("STRIPE_WEBHOOK_SECRET", section.Key("STRIPE_WEBHOOK_SECRET").String())
+	setIfMissing("ADMIN_EMAILS", section.Key("ADMIN_EMAILS").String())
+	setIfMissing("STRIPE_PRICE_MIGRATION_GRACE_DAYS", section.Key("STRIPE_PRICE_MIGRATION_GRACE_DAYS").String())
 
 	return nil
 }

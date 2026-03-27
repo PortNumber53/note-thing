@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"note-thing/backend/internal/billing"
 	"note-thing/backend/internal/config"
 	"note-thing/backend/internal/db"
 	"note-thing/backend/internal/migrations"
@@ -72,7 +73,24 @@ func runServe() {
 	}
 	defer database.Close()
 
-	handler := router.New(database, jwtSecret)
+	// Initialize Stripe billing (optional — skip if no key configured)
+	var billingSvc *billing.Service
+	stripeKey := os.Getenv("STRIPE_SECRET_KEY")
+	if stripeKey != "" {
+		billingSvc = billing.NewService(database, stripeKey)
+		if err := billingSvc.Bootstrap(context.Background()); err != nil {
+			log.Printf("billing bootstrap warning: %v", err)
+		}
+		if err := billingSvc.SyncFromStripe(context.Background()); err != nil {
+			log.Printf("billing sync warning: %v", err)
+		}
+
+		worker := billing.NewPriceMigrationWorker(database)
+		go worker.Start(context.Background())
+		defer worker.Stop()
+	}
+
+	handler := router.New(database, jwtSecret, billingSvc)
 
 	server := &http.Server{
 		Addr:              "0.0.0.0:" + port,
