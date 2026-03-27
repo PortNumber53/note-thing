@@ -28,12 +28,12 @@ pipeline {
 		stage('Backend: Test & Migrate') {
 			steps {
 				withCredentials([
-					string(credentialsId: 'prod-xata-database-url-note-thing', variable: 'DATABASE_URL'),
+					string(credentialsId: 'prod-database-url-note-thing', variable: 'DATABASE_URL'),
 				]) {
 					sh '''
 						cd backend
 						go test ./...
-						go run ./cmd/migrate -direction up
+						go run . migrate up
 					'''
 				}
 			}
@@ -50,7 +50,7 @@ pipeline {
 				withCredentials([
 					string(credentialsId: 'cloudflare-api-token', variable: 'CLOUDFLARE_API_TOKEN'),
 					string(credentialsId: 'prod-backend-url-note-thing', variable: 'BACKEND_URL'),
-					string(credentialsId: 'prod-xata-database-url-note-thing', variable: 'DATABASE_URL'),
+					string(credentialsId: 'prod-database-url-note-thing', variable: 'DATABASE_URL'),
 					string(credentialsId: 'prod-google-client-id-note-thing', variable: 'GOOGLE_CLIENT_ID'),
 					string(credentialsId: 'prod-google-client-secret-note-thing', variable: 'GOOGLE_CLIENT_SECRET'),
 					string(credentialsId: 'prod-jwt-secret-note-thing', variable: 'JWT_SECRET'),
@@ -84,7 +84,7 @@ EOF
 			steps {
 				withCredentials([
 					sshUserPrivateKey(credentialsId: 'Jenkins-private-key', keyFileVariable: 'SSH_KEY'),
-					string(credentialsId: 'prod-xata-database-url-note-thing', variable: 'DATABASE_URL'),
+					string(credentialsId: 'prod-database-url-note-thing', variable: 'DATABASE_URL'),
 					string(credentialsId: 'prod-google-client-id-note-thing', variable: 'GOOGLE_CLIENT_ID'),
 					string(credentialsId: 'prod-google-client-secret-note-thing', variable: 'GOOGLE_CLIENT_SECRET'),
 					string(credentialsId: 'prod-jwt-secret-note-thing', variable: 'JWT_SECRET'),

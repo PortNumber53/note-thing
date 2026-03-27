@@ -23,8 +23,8 @@ The server listens on port `18611` by default. Change with `PORT`.
 Set `DATABASE_URL` to your Postgres connection string, then from `backend/`:
 
 ```bash
-go run ./cmd/migrate -direction up
-go run ./cmd/migrate -direction down -steps 1
+go run . migrate up
+go run . migrate down --steps 1
 ```
 
 This uses `golang-migrate/migrate` ([repo](https://github.com/golang-migrate/migrate)).

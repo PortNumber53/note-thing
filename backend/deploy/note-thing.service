@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/var/www/vhosts/api-note-thing.truvis.co
-ExecStart=/var/www/vhosts/api-note-thing.truvis.co/note-thing
+ExecStart=/var/www/vhosts/api-note-thing.truvis.co/note-thing serve
 Restart=always
 RestartSec=3
 

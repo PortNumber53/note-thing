@@ -41,6 +41,8 @@ func Load() error {
 	setIfMissing("GOOGLE_CLIENT_SECRET", section.Key("GOOGLE_CLIENT_SECRET").String())
 	setIfMissing("JWT_SECRET", section.Key("JWT_SECRET").String())
 	setIfMissing("PORT", section.Key("PORT").String())
+	setIfMissing("GOOGLE_REDIRECT_URL", section.Key("GOOGLE_REDIRECT_URL").String())
+	setIfMissing("FRONTEND_URL", section.Key("FRONTEND_URL").String())
 
 	return nil
 }

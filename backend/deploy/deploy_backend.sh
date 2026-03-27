@@ -19,7 +19,7 @@ mkdir -p "${BUILD_DIR}"
 
 echo "Building linux binary..."
 cd "${ROOT_DIR}"
-GOOS=linux GOARCH=amd64 go build -o "${BUILD_DIR}/note-thing" ./cmd/server
+GOOS=linux GOARCH=amd64 go build -o "${BUILD_DIR}/note-thing" .
 
 echo "Ensuring target directories exist on server..."
 ssh -i "${SSH_KEY_PATH}" "${REMOTE_USER}@${REMOTE_HOST}" \
