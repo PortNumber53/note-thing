@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router'
-import { AppLayout } from '@/app'
+import { AppLayout } from '@/App'
 import { LoginPage } from '@/components/auth/login-page'
 import { AuthCallback } from '@/components/auth/auth-callback'
 import { AllNotesView } from './all-notes'
