@@ -11,6 +11,11 @@ export type Note = {
   id: string
   title: string
   body: string
+  encryptedTitle?: string
+  encryptedBody?: string
+  noteKeyWrapped?: string
+  keyVersion?: number
+  isEncrypted: boolean
   notebookId: string | null
   tags: Tag[]
   createdAt: string

@@ -9,14 +9,31 @@ import (
 	"github.com/lib/pq"
 )
 
+const noteSelectCols = `n.id, n.title, n.body, n.encrypted_title, n.encrypted_body, n.note_key_wrapped, n.key_version, n.is_encrypted, n.notebook_id, n.created_at, n.updated_at`
+
 type Note struct {
-	ID         string    `json:"id"`
-	Title      string    `json:"title"`
-	Body       string    `json:"body"`
-	NotebookID *string   `json:"notebookId"`
-	Tags       []Tag     `json:"tags"`
-	CreatedAt  time.Time `json:"createdAt"`
-	UpdatedAt  time.Time `json:"updatedAt"`
+	ID              string    `json:"id"`
+	Title           string    `json:"title"`
+	Body            string    `json:"body"`
+	EncryptedTitle  []byte    `json:"encryptedTitle,omitempty"`
+	EncryptedBody   []byte    `json:"encryptedBody,omitempty"`
+	NoteKeyWrapped  []byte    `json:"noteKeyWrapped,omitempty"`
+	KeyVersion      *int      `json:"keyVersion,omitempty"`
+	IsEncrypted     bool      `json:"isEncrypted"`
+	NotebookID      *string   `json:"notebookId"`
+	Tags            []Tag     `json:"tags"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
+}
+
+func scanNote(row interface{ Scan(...any) error }) (Note, error) {
+	var n Note
+	err := row.Scan(
+		&n.ID, &n.Title, &n.Body,
+		&n.EncryptedTitle, &n.EncryptedBody, &n.NoteKeyWrapped, &n.KeyVersion, &n.IsEncrypted,
+		&n.NotebookID, &n.CreatedAt, &n.UpdatedAt,
+	)
+	return n, err
 }
 
 type NoteFilters struct {
@@ -26,23 +43,30 @@ type NoteFilters struct {
 }
 
 type CreateNoteInput struct {
-	Title      string   `json:"title"`
-	Body       string   `json:"body"`
-	NotebookID *string  `json:"notebookId"`
-	TagIDs     []string `json:"tagIds"`
+	Title          string   `json:"title"`
+	Body           string   `json:"body"`
+	EncryptedTitle []byte   `json:"encryptedTitle,omitempty"`
+	EncryptedBody  []byte   `json:"encryptedBody,omitempty"`
+	NoteKeyWrapped []byte   `json:"noteKeyWrapped,omitempty"`
+	KeyVersion     *int     `json:"keyVersion,omitempty"`
+	IsEncrypted    bool     `json:"isEncrypted"`
+	NotebookID     *string  `json:"notebookId"`
+	TagIDs         []string `json:"tagIds"`
 }
 
 type UpdateNoteInput struct {
-	Title      *string  `json:"title"`
-	Body       *string  `json:"body"`
-	NotebookID *string  `json:"notebookId"`
+	Title          *string `json:"title"`
+	Body           *string `json:"body"`
+	EncryptedTitle []byte  `json:"encryptedTitle,omitempty"`
+	EncryptedBody  []byte  `json:"encryptedBody,omitempty"`
+	NoteKeyWrapped []byte  `json:"noteKeyWrapped,omitempty"`
+	KeyVersion     *int    `json:"keyVersion,omitempty"`
+	IsEncrypted    *bool   `json:"isEncrypted,omitempty"`
+	NotebookID     *string `json:"notebookId"`
 }
 
 func ListNotes(ctx context.Context, db *sql.DB, userID string, filters NoteFilters) ([]Note, error) {
-	query := `
-		SELECT DISTINCT n.id, n.title, n.body, n.notebook_id, n.created_at, n.updated_at
-		FROM notes n
-	`
+	query := `SELECT DISTINCT ` + noteSelectCols + ` FROM notes n`
 	args := []any{userID}
 	argIdx := 2
 
@@ -81,8 +105,8 @@ func ListNotes(ctx context.Context, db *sql.DB, userID string, filters NoteFilte
 
 	notes := make([]Note, 0)
 	for rows.Next() {
-		var n Note
-		if err := rows.Scan(&n.ID, &n.Title, &n.Body, &n.NotebookID, &n.CreatedAt, &n.UpdatedAt); err != nil {
+		n, err := scanNote(rows)
+		if err != nil {
 			return nil, err
 		}
 		n.Tags = make([]Tag, 0)
@@ -102,12 +126,12 @@ func ListNotes(ctx context.Context, db *sql.DB, userID string, filters NoteFilte
 }
 
 func GetNote(ctx context.Context, db *sql.DB, userID, noteID string) (Note, error) {
-	var n Note
-	err := db.QueryRowContext(ctx, `
-		SELECT id, title, body, notebook_id, created_at, updated_at
-		FROM notes
-		WHERE id = $1 AND user_id = $2
-	`, noteID, userID).Scan(&n.ID, &n.Title, &n.Body, &n.NotebookID, &n.CreatedAt, &n.UpdatedAt)
+	row := db.QueryRowContext(ctx, `
+		SELECT `+noteSelectCols+`
+		FROM notes n
+		WHERE n.id = $1 AND n.user_id = $2
+	`, noteID, userID)
+	n, err := scanNote(row)
 	if err != nil {
 		return n, err
 	}
@@ -128,7 +152,6 @@ func CreateNote(ctx context.Context, db *sql.DB, userID string, input CreateNote
 	}
 	defer tx.Rollback()
 
-	// If no notebook specified, use default
 	notebookID := input.NotebookID
 	if notebookID == nil {
 		var defaultID string
@@ -143,11 +166,14 @@ func CreateNote(ctx context.Context, db *sql.DB, userID string, input CreateNote
 
 	var n Note
 	err = tx.QueryRowContext(ctx, `
-		INSERT INTO notes (title, body, user_id, notebook_id)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, title, body, notebook_id, created_at, updated_at
-	`, input.Title, input.Body, userID, notebookID).Scan(
-		&n.ID, &n.Title, &n.Body, &n.NotebookID, &n.CreatedAt, &n.UpdatedAt,
+		INSERT INTO notes (title, body, encrypted_title, encrypted_body, note_key_wrapped, key_version, is_encrypted, user_id, notebook_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id, title, body, encrypted_title, encrypted_body, note_key_wrapped, key_version, is_encrypted, notebook_id, created_at, updated_at
+	`, input.Title, input.Body, input.EncryptedTitle, input.EncryptedBody, input.NoteKeyWrapped, input.KeyVersion, input.IsEncrypted, userID, notebookID,
+	).Scan(
+		&n.ID, &n.Title, &n.Body,
+		&n.EncryptedTitle, &n.EncryptedBody, &n.NoteKeyWrapped, &n.KeyVersion, &n.IsEncrypted,
+		&n.NotebookID, &n.CreatedAt, &n.UpdatedAt,
 	)
 	if err != nil {
 		return Note{}, err
@@ -164,23 +190,28 @@ func CreateNote(ctx context.Context, db *sql.DB, userID string, input CreateNote
 		return Note{}, err
 	}
 
-	// Reload to get tags
 	return GetNote(ctx, db, userID, n.ID)
 }
 
 func UpdateNote(ctx context.Context, db *sql.DB, userID, noteID string, input UpdateNoteInput) (Note, error) {
-	var n Note
-	err := db.QueryRowContext(ctx, `
+	row := db.QueryRowContext(ctx, `
 		UPDATE notes SET
 			title = COALESCE($1, title),
 			body = COALESCE($2, body),
 			notebook_id = COALESCE($3, notebook_id),
+			encrypted_title = COALESCE($4, encrypted_title),
+			encrypted_body = COALESCE($5, encrypted_body),
+			note_key_wrapped = COALESCE($6, note_key_wrapped),
+			key_version = COALESCE($7, key_version),
+			is_encrypted = COALESCE($8, is_encrypted),
 			updated_at = now()
-		WHERE id = $4 AND user_id = $5 AND deleted_at IS NULL
-		RETURNING id, title, body, notebook_id, created_at, updated_at
-	`, input.Title, input.Body, input.NotebookID, noteID, userID).Scan(
-		&n.ID, &n.Title, &n.Body, &n.NotebookID, &n.CreatedAt, &n.UpdatedAt,
+		WHERE id = $9 AND user_id = $10 AND deleted_at IS NULL
+		RETURNING id, title, body, encrypted_title, encrypted_body, note_key_wrapped, key_version, is_encrypted, notebook_id, created_at, updated_at
+	`, input.Title, input.Body, input.NotebookID,
+		input.EncryptedTitle, input.EncryptedBody, input.NoteKeyWrapped, input.KeyVersion, input.IsEncrypted,
+		noteID, userID,
 	)
+	n, err := scanNote(row)
 	if err != nil {
 		return n, err
 	}
@@ -240,12 +271,13 @@ func PermanentDeleteNote(ctx context.Context, db *sql.DB, userID, noteID string)
 
 func SearchNotes(ctx context.Context, db *sql.DB, userID, query string) ([]Note, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT id, title, body, notebook_id, created_at, updated_at
-		FROM notes
-		WHERE user_id = $1
-		  AND deleted_at IS NULL
-		  AND search_vector @@ plainto_tsquery('english', $2)
-		ORDER BY ts_rank(search_vector, plainto_tsquery('english', $2)) DESC
+		SELECT `+noteSelectCols+`
+		FROM notes n
+		WHERE n.user_id = $1
+		  AND n.deleted_at IS NULL
+		  AND n.is_encrypted = false
+		  AND n.search_vector @@ plainto_tsquery('english', $2)
+		ORDER BY ts_rank(n.search_vector, plainto_tsquery('english', $2)) DESC
 		LIMIT 50
 	`, userID, query)
 	if err != nil {
@@ -255,8 +287,8 @@ func SearchNotes(ctx context.Context, db *sql.DB, userID, query string) ([]Note,
 
 	notes := make([]Note, 0)
 	for rows.Next() {
-		var n Note
-		if err := rows.Scan(&n.ID, &n.Title, &n.Body, &n.NotebookID, &n.CreatedAt, &n.UpdatedAt); err != nil {
+		n, err := scanNote(rows)
+		if err != nil {
 			return nil, err
 		}
 		n.Tags = make([]Tag, 0)
@@ -276,7 +308,6 @@ func SearchNotes(ctx context.Context, db *sql.DB, userID, query string) ([]Note,
 }
 
 func SetNoteTags(ctx context.Context, db *sql.DB, userID, noteID string, tagIDs []string) error {
-	// Verify note ownership
 	var exists bool
 	err := db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM notes WHERE id = $1 AND user_id = $2)`, noteID, userID).Scan(&exists)
 	if err != nil {

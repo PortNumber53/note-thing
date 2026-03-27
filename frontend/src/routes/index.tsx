@@ -10,10 +10,12 @@ import { TrashView } from './trash'
 import { ProfileView } from './profile'
 import { SettingsView } from './settings'
 import { BillingView } from './billing'
+import { SetupEncryptionPage } from './setup-encryption'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/auth/callback', element: <AuthCallback /> },
+  { path: '/setup-encryption', element: <SetupEncryptionPage /> },
   {
     path: '/',
     element: <AppLayout />,

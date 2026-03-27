@@ -9,6 +9,7 @@ import { useThemeStore } from '@/stores/theme-store'
 import { useEditorPrefsStore } from '@/stores/editor-prefs-store'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useNotebooksStore } from '@/stores/notebooks-store'
+import { EncryptionSetup } from '@/components/settings/encryption-setup'
 
 export function SettingsView() {
   const { setting: themeSetting, setTheme } = useThemeStore()
@@ -90,6 +91,13 @@ export function SettingsView() {
               onSelect={(id) => updateSettings({ defaultNotebookId: id })}
             />
           </div>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium uppercase text-muted-foreground">Security</h2>
+          <EncryptionSetup />
         </div>
       </div>
     </div>

@@ -46,6 +46,11 @@ func New(db *sql.DB, jwtSecret string, billingSvc *billing.Service) http.Handler
 		r.Get("/api/settings", settings.Get)
 		r.Put("/api/settings", settings.Update)
 
+		encryption := &handler.EncryptionHandler{DB: db}
+		r.Get("/api/encryption", encryption.GetMetadata)
+		r.Post("/api/encryption/setup", encryption.Setup)
+		r.Put("/api/encryption/rotate", encryption.RotateKey)
+
 		r.Get("/api/billing/status", billingH.Status)
 		r.Post("/api/billing/checkout", billingH.CreateCheckout)
 		r.Post("/api/billing/portal", billingH.CreatePortal)
