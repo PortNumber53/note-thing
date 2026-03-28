@@ -2,8 +2,23 @@ import { useNotesStore } from '@/stores/notes-store'
 import { Button } from '@/components/ui/button'
 import { RotateCcw, Trash2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 
-export function TrashList() {
+function stripMarkdown(text: string) {
+  return text
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^>\s?/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\\?\.\s+/gm, '')
+    .replace(/^---+$/gm, '')
+    .replace(/\\([.!#*_`~[\]()>+\-])/g, '$1')
+    .replace(/[*_`~[\]]/g, '')
+    .trim()
+}
+
+export function TrashList({ activeId, onSelect }: { activeId: string | null; onSelect: (id: string) => void }) {
   const { notes, restoreNote, permanentDeleteNote } = useNotesStore()
 
   return (
@@ -12,41 +27,24 @@ export function TrashList() {
         <div className="p-4 text-center text-sm text-muted-foreground">Trash is empty</div>
       )}
       {notes.map((note) => (
-        <div key={note.id} className="flex items-center gap-2 border-b p-3">
-          <div className="flex-1 min-w-0">
+        <button
+          key={note.id}
+          onClick={() => onSelect(note.id)}
+          className={cn(
+            "w-full text-left p-3 border-b transition-colors hover:bg-accent",
+            activeId === note.id && "bg-accent"
+          )}
+        >
+          <div className="flex items-baseline justify-between gap-2">
             <h3 className="text-sm font-medium truncate">{note.title || 'Untitled'}</h3>
-            <p className="text-xs text-muted-foreground truncate">{note.body.slice(0, 160)
-              .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-              .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-              .replace(/^#{1,6}\s+/gm, '')
-              .replace(/^>\s?/gm, '')
-              .replace(/^[-*+]\s+/gm, '')
-              .replace(/^\d+\\?\.\s+/gm, '')
-              .replace(/^---+$/gm, '')
-              .replace(/\\([.!#*_`~[\]()>+\-])/g, '$1')
-              .replace(/[*_`~[\]]/g, '')
-              .trim()
-              .slice(0, 80)}</p>
+            <span className="text-xs text-muted-foreground shrink-0">
+              {new Date(note.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 shrink-0"
-            onClick={() => restoreNote(note.id)}
-            title="Restore"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 shrink-0 text-destructive"
-            onClick={() => permanentDeleteNote(note.id)}
-            title="Delete permanently"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+            {stripMarkdown(note.body.slice(0, 160)).slice(0, 80)}
+          </p>
+        </button>
       ))}
     </ScrollArea>
   )

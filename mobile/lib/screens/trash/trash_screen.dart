@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/providers.dart';
+import '../../widgets/note_card.dart';
 
 class TrashScreen extends ConsumerWidget {
   const TrashScreen({super.key});
@@ -22,38 +24,9 @@ class TrashScreen extends ConsumerWidget {
             itemCount: notes.length,
             itemBuilder: (context, index) {
               final note = notes[index];
-              return Dismissible(
-                key: Key(note.id),
-                background: Container(
-                  color: Colors.green,
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.only(left: 16),
-                  child: const Icon(Icons.restore, color: Colors.white),
-                ),
-                secondaryBackground: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 16),
-                  child: const Icon(Icons.delete_forever, color: Colors.white),
-                ),
-                confirmDismiss: (direction) async {
-                  if (direction == DismissDirection.startToEnd) {
-                    await ref.read(notesApiProvider).restore(note.id);
-                    ref.invalidate(trashedNotesProvider);
-                    return true;
-                  } else {
-                    await ref.read(notesApiProvider).permanentDelete(note.id);
-                    ref.invalidate(trashedNotesProvider);
-                    return true;
-                  }
-                },
-                child: ListTile(
-                  title: Text(note.title.isEmpty ? 'Untitled' : note.title),
-                  subtitle: Text(
-                    note.body.length > 80 ? '${note.body.substring(0, 80)}...' : note.body,
-                    maxLines: 1,
-                  ),
-                ),
+              return NoteCard(
+                note: note,
+                onTap: () => context.go('/trash/${note.id}'),
               );
             },
           );

@@ -11,6 +11,7 @@ import '../screens/notes/note_editor_screen.dart';
 import '../screens/notebooks/notebook_list_screen.dart';
 import '../screens/search/search_screen.dart';
 import '../screens/trash/trash_screen.dart';
+import '../screens/trash/trash_detail_screen.dart';
 import '../screens/settings/settings_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -86,6 +87,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/trash',
             builder: (_, _) => const TrashScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => TrashDetailScreen(
+                  noteId: state.pathParameters['id']!,
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/settings',
