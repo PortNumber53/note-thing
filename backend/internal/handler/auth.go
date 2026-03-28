@@ -323,10 +323,17 @@ func (h *AuthHandler) EmailLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if passwordHash == "" {
-		respondError(w, http.StatusUnauthorized, "this account uses Google sign-in")
-		return
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(input.Password)); err != nil {
+		// Google-only account: set a password so they can use either method
+		hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		if err := model.SetPasswordHash(r.Context(), h.DB, user.ID, string(hash)); err != nil {
+			respondError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+	} else if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(input.Password)); err != nil {
 		respondError(w, http.StatusUnauthorized, "invalid email or password")
 		return
 	}

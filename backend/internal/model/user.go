@@ -89,6 +89,11 @@ func GetUserByEmail(ctx context.Context, db *sql.DB, email string) (User, string
 	return u, passwordHash.String, err
 }
 
+func SetPasswordHash(ctx context.Context, db *sql.DB, id, passwordHash string) error {
+	_, err := db.ExecContext(ctx, `UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, passwordHash, id)
+	return err
+}
+
 func DeleteUser(ctx context.Context, db *sql.DB, id string) error {
 	result, err := db.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, id)
 	if err != nil {

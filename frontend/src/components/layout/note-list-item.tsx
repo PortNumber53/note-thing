@@ -8,7 +8,18 @@ type Props = {
 }
 
 export function NoteListItem({ note, isActive, onClick }: Props) {
-  const preview = note.body.slice(0, 120).replace(/[#*_`~[\]]/g, '')
+  const preview = note.body.slice(0, 200)
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^>\s?/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\\?\.\s+/gm, '')
+    .replace(/^---+$/gm, '')
+    .replace(/\\([.!#*_`~[\]()>+\-])/g, '$1')
+    .replace(/[*_`~[\]]/g, '')
+    .trim()
+    .slice(0, 120)
   const date = new Date(note.updatedAt).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',

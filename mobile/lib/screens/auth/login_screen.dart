@@ -38,10 +38,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.menu_book,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/logo.png',
+                  width: 64,
+                  height: 64,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -61,6 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               if (_isSignUp)
                 TextField(
                   controller: _nameController,
+                  enabled: !_isLoading,
                   decoration: const InputDecoration(
                     labelText: 'Name',
                     border: OutlineInputBorder(),
@@ -70,6 +74,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               if (_isSignUp) const SizedBox(height: 12),
               TextField(
                 controller: _emailController,
+                enabled: !_isLoading,
                 decoration: const InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
@@ -80,6 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _passwordController,
+                enabled: !_isLoading,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   border: const OutlineInputBorder(),
@@ -97,49 +103,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 8),
                 Text(_error, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 13)),
               ],
-              if (_isLoading) ...[
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Authenticating...',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _isLoading ? null : _handleEmailAuth,
-                  child: Text(_isSignUp ? 'Create Account' : 'Sign In'),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        )
+                      : Text(_isSignUp ? 'Create Account' : 'Sign In'),
                 ),
               ),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () => setState(() {
+                onPressed: _isLoading ? null : () => setState(() {
                   _isSignUp = !_isSignUp;
                   _error = '';
                 }),

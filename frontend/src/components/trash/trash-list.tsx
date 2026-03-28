@@ -15,7 +15,18 @@ export function TrashList() {
         <div key={note.id} className="flex items-center gap-2 border-b p-3">
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-medium truncate">{note.title || 'Untitled'}</h3>
-            <p className="text-xs text-muted-foreground truncate">{note.body.slice(0, 80)}</p>
+            <p className="text-xs text-muted-foreground truncate">{note.body.slice(0, 160)
+              .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+              .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+              .replace(/^#{1,6}\s+/gm, '')
+              .replace(/^>\s?/gm, '')
+              .replace(/^[-*+]\s+/gm, '')
+              .replace(/^\d+\\?\.\s+/gm, '')
+              .replace(/^---+$/gm, '')
+              .replace(/\\([.!#*_`~[\]()>+\-])/g, '$1')
+              .replace(/[*_`~[\]]/g, '')
+              .trim()
+              .slice(0, 80)}</p>
           </div>
           <Button
             variant="ghost"

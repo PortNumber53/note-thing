@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { BookOpen, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
+import logoImg from '@/assets/logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -53,7 +54,7 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="mx-auto w-full max-w-sm space-y-6 p-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <BookOpen className="h-12 w-12 text-primary" />
+          <img src={logoImg} alt="Note Thing" className="h-12 w-12 rounded-lg" />
           <h1 className="text-2xl font-bold">Note Thing</h1>
           <p className="text-muted-foreground">Your notes, organized.</p>
         </div>

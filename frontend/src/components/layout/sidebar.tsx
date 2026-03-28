@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router'
-import { BookOpen, FileText, Search, Trash2, Plus, Tag, LogOut, User, Settings, CreditCard, ChevronUp } from 'lucide-react'
+import { FileText, Search, Trash2, Plus, Tag, LogOut, User, Settings, CreditCard, ChevronUp, BookOpen } from 'lucide-react'
+import logoImg from '@/assets/logo.png'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -33,7 +34,7 @@ export function Sidebar({ className }: { className?: string }) {
   return (
     <div className={cn("flex h-full w-60 flex-col border-r bg-sidebar", className)}>
       <div className="flex items-center gap-2 p-4">
-        <BookOpen className="h-5 w-5" />
+        <img src={logoImg} alt="Note Thing" className="h-6 w-6 rounded" />
         <span className="font-semibold">Note Thing</span>
       </div>
 

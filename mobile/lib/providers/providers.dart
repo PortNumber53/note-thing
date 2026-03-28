@@ -78,29 +78,17 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   }
 
   Future<void> signupWithEmail(String email, String password, String name) async {
-    state = const AsyncValue.loading();
-    try {
-      final result = await ref.read(authApiProvider).signup(email, password, name);
-      await ref.read(secureStorageProvider).write(key: 'jwt_token', value: result.token);
-      state = AsyncValue.data(result.user);
-      await ref.read(cryptoStateProvider.notifier).fetchEncryptionStatus();
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow;
-    }
+    final result = await ref.read(authApiProvider).signup(email, password, name);
+    await ref.read(secureStorageProvider).write(key: 'jwt_token', value: result.token);
+    state = AsyncValue.data(result.user);
+    await ref.read(cryptoStateProvider.notifier).fetchEncryptionStatus();
   }
 
   Future<void> loginWithEmail(String email, String password) async {
-    state = const AsyncValue.loading();
-    try {
-      final result = await ref.read(authApiProvider).login(email, password);
-      await ref.read(secureStorageProvider).write(key: 'jwt_token', value: result.token);
-      state = AsyncValue.data(result.user);
-      await ref.read(cryptoStateProvider.notifier).fetchEncryptionStatus();
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow;
-    }
+    final result = await ref.read(authApiProvider).login(email, password);
+    await ref.read(secureStorageProvider).write(key: 'jwt_token', value: result.token);
+    state = AsyncValue.data(result.user);
+    await ref.read(cryptoStateProvider.notifier).fetchEncryptionStatus();
   }
 
   Future<void> logout() async {
@@ -111,6 +99,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
 
 // Notes - use a record as family key for value equality
 final notesProvider = FutureProvider.family<List<Note>, ({String? notebookId, String? tagId})>((ref, filters) async {
+  // Watch crypto state so notes re-decrypt after unlock
+  ref.watch(cryptoStateProvider);
   final notes = await ref.read(notesApiProvider).fetchAll(
     notebookId: filters.notebookId,
     tagId: filters.tagId,
@@ -119,6 +109,7 @@ final notesProvider = FutureProvider.family<List<Note>, ({String? notebookId, St
 });
 
 final trashedNotesProvider = FutureProvider<List<Note>>((ref) async {
+  ref.watch(cryptoStateProvider);
   final notes = await ref.read(notesApiProvider).fetchTrashed();
   return _decryptNotes(ref, notes);
 });

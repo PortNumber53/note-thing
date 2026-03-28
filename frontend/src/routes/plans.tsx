@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { BookOpen, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
+import logoImg from '@/assets/logo.png'
 
 const freePlan = {
   name: 'Free',
@@ -46,7 +47,7 @@ export function PlansPage() {
       <nav className="border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <button onClick={() => navigate('/')} className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" />
+            <img src={logoImg} alt="Note Thing" className="h-6 w-6 rounded" />
             <span className="text-lg font-bold">Note Thing</span>
           </button>
           <div className="flex items-center gap-4">
@@ -118,7 +119,7 @@ export function PlansPage() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <BookOpen className="h-4 w-4" />
+            <img src={logoImg} alt="Note Thing" className="h-4 w-4 rounded" />
             <span>Note Thing</span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">

@@ -12,7 +12,15 @@ class NoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final preview = note.body
-        .replaceAll(RegExp(r'[#*_`~\[\]]'), '')
+        .replaceAllMapped(RegExp(r'!\[([^\]]*)\]\([^)]*\)'), (m) => m[1]!)  // images
+        .replaceAllMapped(RegExp(r'\[([^\]]*)\]\([^)]*\)'), (m) => m[1]!)   // links
+        .replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '') // headings
+        .replaceAll(RegExp(r'^>\s?', multiLine: true), '')      // blockquotes
+        .replaceAll(RegExp(r'^[-*+]\s+', multiLine: true), '')  // unordered lists
+        .replaceAll(RegExp(r'^\d+\\?\.\s+', multiLine: true), '') // ordered lists
+        .replaceAll(RegExp(r'^---+$', multiLine: true), '')     // horizontal rules
+        .replaceAllMapped(RegExp(r'\\([^\s])'), (m) => m[1]!)   // escaped chars
+        .replaceAll(RegExp(r'[*_`~\[\]]'), '')                  // remaining inline formatting
         .trim();
     final dateStr = DateFormat.MMMd().format(note.updatedAt);
 
