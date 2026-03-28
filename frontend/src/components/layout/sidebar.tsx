@@ -40,28 +40,28 @@ export function Sidebar({ className }: { className?: string }) {
       <ScrollArea className="flex-1 px-2">
         <nav className="space-y-1">
           <Button
-            variant={location.pathname === '/notes' ? 'secondary' : 'ghost'}
+            variant={location.pathname === '/app/notes' ? 'secondary' : 'ghost'}
             className="w-full justify-start"
             size="sm"
-            onClick={() => navigate('/notes')}
+            onClick={() => navigate('/app/notes')}
           >
             <FileText className="mr-2 h-4 w-4" />
             All Notes
           </Button>
           <Button
-            variant={location.pathname === '/trash' ? 'secondary' : 'ghost'}
+            variant={location.pathname === '/app/trash' ? 'secondary' : 'ghost'}
             className="w-full justify-start"
             size="sm"
-            onClick={() => navigate('/trash')}
+            onClick={() => navigate('/app/trash')}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Trash
           </Button>
           <Button
-            variant={location.pathname === '/search' ? 'secondary' : 'ghost'}
+            variant={location.pathname === '/app/search' ? 'secondary' : 'ghost'}
             className="w-full justify-start"
             size="sm"
-            onClick={() => navigate('/search')}
+            onClick={() => navigate('/app/search')}
           >
             <Search className="mr-2 h-4 w-4" />
             Search
@@ -82,10 +82,10 @@ export function Sidebar({ className }: { className?: string }) {
           {notebooks.map((nb) => (
             <Button
               key={nb.id}
-              variant={location.pathname === `/notebooks/${nb.id}` ? 'secondary' : 'ghost'}
+              variant={location.pathname === `/app/notebooks/${nb.id}` ? 'secondary' : 'ghost'}
               className="w-full justify-start text-sm"
               size="sm"
-              onClick={() => navigate(`/notebooks/${nb.id}`)}
+              onClick={() => navigate(`/app/notebooks/${nb.id}`)}
             >
               <BookOpen className="mr-2 h-3.5 w-3.5" />
               <span className="truncate">{nb.name}</span>
@@ -103,10 +103,10 @@ export function Sidebar({ className }: { className?: string }) {
           {tags.map((tag) => (
             <Button
               key={tag.id}
-              variant={location.pathname === `/tags/${tag.id}` ? 'secondary' : 'ghost'}
+              variant={location.pathname === `/app/tags/${tag.id}` ? 'secondary' : 'ghost'}
               className="w-full justify-start text-sm"
               size="sm"
-              onClick={() => navigate(`/tags/${tag.id}`)}
+              onClick={() => navigate(`/app/tags/${tag.id}`)}
             >
               <Tag className="mr-2 h-3.5 w-3.5" />
               <span className="truncate">{tag.name}</span>
@@ -141,15 +141,15 @@ export function Sidebar({ className }: { className?: string }) {
         <DropdownMenuContent side="top" align="start" className="w-56">
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate('/account/profile')}>
+          <DropdownMenuItem onClick={() => navigate('/app/account/profile')}>
             <User className="mr-2 h-4 w-4" />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/account/settings')}>
+          <DropdownMenuItem onClick={() => navigate('/app/account/settings')}>
             <Settings className="mr-2 h-4 w-4" />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/account/billing')}>
+          <DropdownMenuItem onClick={() => navigate('/app/account/billing')}>
             <CreditCard className="mr-2 h-4 w-4" />
             Billing
           </DropdownMenuItem>

@@ -41,7 +41,7 @@ export function LoginPage() {
 
       await useCryptoStore.getState().fetchEncryptionStatus()
       const { isEncryptionEnabled } = useCryptoStore.getState()
-      navigate(isEncryptionEnabled ? '/notes' : '/setup-encryption', { replace: true })
+      navigate(isEncryptionEnabled ? '/app/notes' : '/setup-encryption', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed')
     } finally {
@@ -128,21 +128,25 @@ export function LoginPage() {
           )}
         </div>
 
-        <div className="relative">
-          <Separator />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-            or
-          </span>
-        </div>
+        {import.meta.env.VITE_ENABLE_GOOGLE_OAUTH === 'true' && (
+          <>
+            <div className="relative">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
+                or
+              </span>
+            </div>
 
-        <Button
-          variant="outline"
-          className="w-full"
-          size="lg"
-          onClick={() => { window.location.href = '/auth/google/login' }}
-        >
-          Continue with Google
-        </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              size="lg"
+              onClick={() => { window.location.href = '/auth/google/login' }}
+            >
+              Continue with Google
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )

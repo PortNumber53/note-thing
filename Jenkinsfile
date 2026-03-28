@@ -54,6 +54,7 @@ pipeline {
 					string(credentialsId: 'prod-google-client-id-note-thing', variable: 'GOOGLE_CLIENT_ID'),
 					string(credentialsId: 'prod-google-client-secret-note-thing', variable: 'GOOGLE_CLIENT_SECRET'),
 					string(credentialsId: 'prod-jwt-secret-note-thing', variable: 'JWT_SECRET'),
+					string(credentialsId: 'prod-enable-google-oauth-note-thing', variable: 'ENABLE_GOOGLE_OAUTH'),
 				]) {
 					sh '''
 						cd frontend
@@ -64,6 +65,7 @@ pipeline {
 						export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
 						export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
 						export JWT_SECRET="$JWT_SECRET"
+						export VITE_ENABLE_GOOGLE_OAUTH="$ENABLE_GOOGLE_OAUTH"
 						npm run build
 						npx wrangler secret put BACKEND_URL --config wrangler.jsonc <<EOF
 $BACKEND_URL

@@ -61,6 +61,12 @@ func (h *NotesHandler) Create(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if !checkNoteLimit(r, h.DB, w) {
+		return
+	}
+	if !checkNoteSizeLimit(r, h.DB, w, input.Body) {
+		return
+	}
 	note, err := model.CreateNote(r.Context(), h.DB, userID, input)
 	if err != nil {
 		log.Printf("create note failed: %v", err)
@@ -76,6 +82,9 @@ func (h *NotesHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var input model.UpdateNoteInput
 	if err := decodeJSON(r, &input); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if input.Body != nil && !checkNoteSizeLimit(r, h.DB, w, *input.Body) {
 		return
 	}
 	note, err := model.UpdateNote(r.Context(), h.DB, userID, noteID, input)

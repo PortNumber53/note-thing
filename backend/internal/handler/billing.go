@@ -39,6 +39,21 @@ func (h *BillingHandler) GetPrice(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *BillingHandler) Usage(w http.ResponseWriter, r *http.Request) {
+	userID := userIDFromContext(r)
+	freeTier := isFreeTier(r, h.DB)
+
+	noteCount, _ := model.CountUserNotes(r.Context(), h.DB, userID)
+	notebookCount, _ := model.CountUserNotebooks(r.Context(), h.DB, userID)
+
+	respondJSON(w, http.StatusOK, map[string]any{
+		"isFreeTier": freeTier,
+		"notes":      map[string]int{"used": noteCount, "limit": model.FreeMaxNotes},
+		"notebooks":  map[string]int{"used": notebookCount, "limit": model.FreeMaxNotebooks + 1},
+		"maxNoteSizeMB": 1,
+	})
+}
+
 func (h *BillingHandler) Status(w http.ResponseWriter, r *http.Request) {
 	userID := userIDFromContext(r)
 	sub, err := model.GetSubscriptionByUserID(r.Context(), h.DB, userID)

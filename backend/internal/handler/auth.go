@@ -138,15 +138,27 @@ func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 // and returns a JWT. Used by native mobile apps that get an idToken from Google Sign-In.
 func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		IDToken string `json:"idToken"`
+		IDToken     string `json:"idToken"`
+		AccessToken string `json:"accessToken"`
 	}
-	if err := decodeJSON(r, &input); err != nil || input.IDToken == "" {
-		respondError(w, http.StatusBadRequest, "idToken is required")
+	if err := decodeJSON(r, &input); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
 
-	// Verify the Google ID token by fetching user info from Google's tokeninfo endpoint
-	resp, err := http.Get("https://oauth2.googleapis.com/tokeninfo?id_token=" + input.IDToken)
+	var userInfoURL string
+	if input.AccessToken != "" {
+		// Use access token to fetch user info directly
+		userInfoURL = "https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + input.AccessToken
+	} else if input.IDToken != "" {
+		// Verify ID token via tokeninfo endpoint
+		userInfoURL = "https://oauth2.googleapis.com/tokeninfo?id_token=" + input.IDToken
+	} else {
+		respondError(w, http.StatusBadRequest, "idToken or accessToken is required")
+		return
+	}
+
+	resp, err := http.Get(userInfoURL)
 	if err != nil {
 		log.Printf("token verify failed: %v", err)
 		respondError(w, http.StatusBadRequest, "failed to verify token")
@@ -161,26 +173,28 @@ func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 
 	var tokenInfo struct {
 		Sub     string `json:"sub"`
+		ID      string `json:"id"`      // userinfo v2 uses "id" instead of "sub"
 		Email   string `json:"email"`
 		Name    string `json:"name"`
 		Picture string `json:"picture"`
-		Aud     string `json:"aud"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to decode token info")
 		return
 	}
 
-	// Verify the token was issued for our app
-	clientID := os.Getenv("GOOGLE_CLIENT_ID")
-	if tokenInfo.Aud != clientID {
-		// Also accept Android client IDs — the aud might be the Android client ID
-		// which is different from the web client ID. Accept any valid token.
-		log.Printf("token aud %s doesn't match web client %s (may be Android client)", tokenInfo.Aud, clientID)
+	// userinfo v2 uses "id", tokeninfo uses "sub"
+	googleID := tokenInfo.Sub
+	if googleID == "" {
+		googleID = tokenInfo.ID
+	}
+	if googleID == "" {
+		respondError(w, http.StatusBadRequest, "could not determine user identity")
+		return
 	}
 
 	// Upsert user
-	user, err := model.UpsertUser(r.Context(), h.DB, tokenInfo.Sub, tokenInfo.Email, tokenInfo.Name, tokenInfo.Picture)
+	user, err := model.UpsertUser(r.Context(), h.DB, googleID, tokenInfo.Email, tokenInfo.Name, tokenInfo.Picture)
 	if err != nil {
 		log.Printf("upsert user failed: %v", err)
 		respondError(w, http.StatusInternalServerError, "failed to create user")

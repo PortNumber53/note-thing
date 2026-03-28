@@ -39,7 +39,7 @@ export function SetupEncryptionPage() {
     setError('')
     try {
       await setupEncryption(password)
-      navigate('/notes', { replace: true })
+      navigate('/app/notes', { replace: true })
     } catch {
       setError('Setup failed. Please try again.')
     } finally {

@@ -23,6 +23,16 @@ class AuthApi {
     );
   }
 
+  Future<AuthResult> loginWithGoogleAccessToken(String accessToken) async {
+    final response = await dio.post('/auth/google/token', data: {
+      'accessToken': accessToken,
+    });
+    return AuthResult(
+      token: response.data['token'] as String,
+      user: User.fromJson(response.data['user'] as Map<String, dynamic>),
+    );
+  }
+
   Future<AuthResult> signup(String email, String password, String name) async {
     final response = await dio.post('/auth/signup', data: {
       'email': email,

@@ -17,7 +17,7 @@ export function AuthCallback() {
         await useCryptoStore.getState().fetchEncryptionStatus()
         const { isEncryptionEnabled } = useCryptoStore.getState()
         if (isEncryptionEnabled) {
-          navigate('/notes', { replace: true })
+          navigate('/app/notes', { replace: true })
         } else {
           navigate('/setup-encryption', { replace: true })
         }

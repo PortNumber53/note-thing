@@ -3,12 +3,14 @@ import { Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCryptoStore } from '@/stores/crypto-store'
+import { useAuthStore } from '@/stores/auth-store'
 
 export function UnlockScreen() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const unlock = useCryptoStore((s) => s.unlock)
+  const logout = useAuthStore((s) => s.logout)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -50,6 +52,9 @@ export function UnlockScreen() {
             {loading ? 'Unlocking...' : 'Unlock'}
           </Button>
         </form>
+        <Button variant="ghost" className="w-full text-muted-foreground" onClick={logout}>
+          Sign out
+        </Button>
       </div>
     </div>
   )

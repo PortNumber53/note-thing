@@ -25,7 +25,8 @@ func scanUser(row interface{ Scan(...any) error }) (User, error) {
 }
 
 func UpsertUser(ctx context.Context, db *sql.DB, googleID, email, name, avatarURL string) (User, error) {
-	return scanUser(db.QueryRowContext(ctx, `
+	// First try: insert or update by google_id
+	u, err := scanUser(db.QueryRowContext(ctx, `
 		INSERT INTO users (google_id, email, name, avatar_url)
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (google_id) DO UPDATE SET
@@ -33,6 +34,20 @@ func UpsertUser(ctx context.Context, db *sql.DB, googleID, email, name, avatarUR
 			name = EXCLUDED.name,
 			avatar_url = EXCLUDED.avatar_url,
 			updated_at = now()
+		RETURNING id, google_id, email, name, avatar_url, created_at, updated_at
+	`, googleID, email, name, avatarURL))
+	if err == nil {
+		return u, nil
+	}
+
+	// If email already exists (from email/password signup), merge by linking google_id
+	return scanUser(db.QueryRowContext(ctx, `
+		UPDATE users SET
+			google_id = $1,
+			name = COALESCE(NULLIF(name, ''), $3),
+			avatar_url = CASE WHEN avatar_url = '' THEN $4 ELSE avatar_url END,
+			updated_at = now()
+		WHERE email = $2
 		RETURNING id, google_id, email, name, avatar_url, created_at, updated_at
 	`, googleID, email, name, avatarURL))
 }

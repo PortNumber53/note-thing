@@ -59,6 +59,19 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       final result = await ref.read(authApiProvider).loginWithGoogle(idToken);
       await ref.read(secureStorageProvider).write(key: 'jwt_token', value: result.token);
       state = AsyncValue.data(result.user);
+      await ref.read(cryptoStateProvider.notifier).fetchEncryptionStatus();
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> loginWithGoogleAccessToken(String accessToken) async {
+    state = const AsyncValue.loading();
+    try {
+      final result = await ref.read(authApiProvider).loginWithGoogleAccessToken(accessToken);
+      await ref.read(secureStorageProvider).write(key: 'jwt_token', value: result.token);
+      state = AsyncValue.data(result.user);
+      await ref.read(cryptoStateProvider.notifier).fetchEncryptionStatus();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

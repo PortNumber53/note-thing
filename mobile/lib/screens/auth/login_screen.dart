@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../config/api_config.dart';
 import '../../providers/providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -147,27 +148,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     : "Don't have an account? Sign up"),
               ),
 
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or', style: Theme.of(context).textTheme.bodySmall),
-                  ),
-                  const Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _isLoading ? null : _signInWithGoogle,
-                  icon: const Icon(Icons.login),
-                  label: const Text('Continue with Google'),
+              if (ApiConfig.enableGoogleOAuth) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('or', style: Theme.of(context).textTheme.bodySmall),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _signInWithGoogle,
+                    icon: const Icon(Icons.login),
+                    label: const Text('Continue with Google'),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -221,10 +223,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() { _isLoading = true; _error = ''; });
 
     try {
-      final googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-        serverClientId: '213214788845-lktq7rm30cef6dekconnvj4ahn4rcaui.apps.googleusercontent.com',
-      );
+      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
       final account = await googleSignIn.signIn();
       if (account == null) {
         setState(() => _isLoading = false);
@@ -232,14 +231,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       final auth = await account.authentication;
-      final idToken = auth.idToken;
-      if (idToken == null) {
+      final accessToken = auth.accessToken;
+      if (accessToken == null) {
         if (mounted) setState(() => _error = 'Failed to get authentication token');
         setState(() => _isLoading = false);
         return;
       }
 
-      await ref.read(authStateProvider.notifier).loginWithGoogle(idToken);
+      await ref.read(authStateProvider.notifier).loginWithGoogleAccessToken(accessToken);
     } catch (e) {
       if (mounted) setState(() => _error = 'Sign in failed: $e');
     } finally {

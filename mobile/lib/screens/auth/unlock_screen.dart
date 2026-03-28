@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../crypto/crypto_provider.dart';
+import '../../providers/providers.dart';
 
 class UnlockScreen extends ConsumerStatefulWidget {
   const UnlockScreen({super.key});
@@ -96,6 +97,17 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                 child: FilledButton(
                   onPressed: _isLoading ? null : _unlock,
                   child: const Text('Unlock'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: _isLoading ? null : () {
+                    ref.read(authStateProvider.notifier).logout();
+                    if (mounted) context.go('/login');
+                  },
+                  child: const Text('Sign out'),
                 ),
               ),
             ],

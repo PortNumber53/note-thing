@@ -33,6 +33,9 @@ func (h *NotebooksHandler) Create(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if !checkNotebookLimit(r, h.DB, w) {
+		return
+	}
 	nb, err := model.CreateNotebook(r.Context(), h.DB, userID, input.Name)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to create notebook")
