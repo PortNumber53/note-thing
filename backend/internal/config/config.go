@@ -27,7 +27,17 @@ func Load() error {
 	}
 
 	if _, err := os.Stat(absoluteConfigPath); err != nil {
-		return nil
+		// Try ~/.config/note-thing/config.ini as fallback
+		if home, homeErr := os.UserHomeDir(); homeErr == nil {
+			userPath := filepath.Join(home, ".config", "note-thing", "config.ini")
+			if _, statErr := os.Stat(userPath); statErr == nil {
+				absoluteConfigPath = userPath
+			} else {
+				return nil
+			}
+		} else {
+			return nil
+		}
 	}
 
 	iniFile, err := ini.Load(absoluteConfigPath)
